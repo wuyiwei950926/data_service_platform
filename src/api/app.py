@@ -75,10 +75,14 @@ def trigger_chat_client():
 
 @app.route('/api/trigger/face-login', methods=['POST'])
 def trigger_face_login():
-    """自動彈出新視窗啟動 M6 客戶端，並啟用 Face ID 模式"""
-    subprocess.Popen(['start', 'cmd', '/k', f'{sys.executable} -m src.chat.client faceid'], shell=True)
-    return jsonify({"status": "success", "message": "啟動成功！請看向攝影機進行 Face ID 登入，成功後將自動進入聊天室。"})
-
+    """啟動 M7 OpenCV 人臉辨識登入系統"""
+    try:
+        # 🛑 【關鍵修復】這裡的模組路徑必須是 src.ai_vision.face_login，不能是 src.chat.client
+        subprocess.Popen(['start', 'cmd', '/k', 'python', '-m', 'src.ai_vision.face_login'], shell=True)
+        return jsonify({"status": "success", "message": "啟動成功！請看向鏡頭進行 Face ID 登入。"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
 @app.route('/api/auth/register', methods=['POST'])
 def api_register():
     """接收前端傳來的註冊請求"""
