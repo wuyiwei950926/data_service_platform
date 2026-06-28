@@ -1,91 +1,76 @@
 import socket
 import threading
 import sys
-import os
-
-# 讓 Python 找得到 AI Vision 模組
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from src.ai_vision.face_login import FaceLoginSystem
+import getpass  # 🛑 引入專門用來隱藏終端機密碼的模組
 
 def receive_messages(client_socket):
+    """處理接收來自伺服器與其他使用者的訊息"""
     while True:
         try:
             message = client_socket.recv(1024).decode('utf-8')
             if not message:
-                print("\n[系統] 與伺服器的連線已中斷。")
-                client_socket.close()
                 break
+            
+            # 清除目前這一行的輸入提示，印出訊息後再補上新的提示
+            sys.stdout.write('\r' + ' ' * 50 + '\r') 
             print(message)
+            print("輸入訊息: ", end="", flush=True)
+            
         except Exception as e:
-            print(f"\n[系統] 發生錯誤: {e}")
+            print(f"\n[系統] 連線異常中斷。")
             client_socket.close()
             break
 
-def start_client(host='127.0.0.1', port=9000, use_faceid=False):
+def start_client(host='127.0.0.1', port=9000):
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client.connect((host, port))
-    except ConnectionRefusedError:
-        print("[-] 無法連線至伺服器，請確認伺服器 (server.py) 是否已啟動。")
+    except Exception as e:
+        print(f"[系統] 無法連線至伺服器: {e}")
         return
 
-    # --- 登入流程 ---
-    print(client.recv(1024).decode('utf-8'), end="") # 接收 "請輸入帳號:"
-    
-    if use_faceid:
-        print("\n[*] 正在啟動 Face ID 系統...")
-        ai_system = FaceLoginSystem()
-        # 呼叫 M7 開啟鏡頭，並取得辨識成功的帳號
-        username = ai_system.start_vision_login()
-        
-        if not username:
-            print("[-] Face ID 登入取消或失敗，連線中斷。")
-            client.close()
-            return
-            
-        # 自動幫使用者輸入帳號
-        print(f"{username} (已透過 Face ID 自動帶入)")
+    try:
+        # --- 登入驗證流程 ---
+        # 1. 接收「請輸入帳號」並回傳
+        prompt_user = client.recv(1024).decode('utf-8')
+        username = input(prompt_user)
         client.send(username.encode('utf-8'))
+
+        # 2. 接收「請輸入密碼」
+        prompt_pass = client.recv(1024).decode('utf-8')
         
-        print(client.recv(1024).decode('utf-8'), end="") # 接收 "請輸入密碼:"
-        print("******** (Face ID 快速通關授權)")
-        # 發送 Face ID 專用憑證給伺服器
-        client.send("FACEID_VERIFIED_TOKEN".encode('utf-8'))
-        
-    else:
-        # 傳統手動輸入模式
-        username = input()
-        client.send(username.encode('utf-8'))
-        print(client.recv(1024).decode('utf-8'), end="")
-        password = input()
+        # 🛑 【關鍵升級】使用 getpass 取代 input，打字時螢幕上完全不會顯示字元！
+        password = getpass.getpass(prompt_pass)
         client.send(password.encode('utf-8'))
 
-    # 接收登入結果
-    login_result = client.recv(1024).decode('utf-8')
-    print(login_result)
-    
-    if "[錯誤]" in login_result:
-        client.close()
-        return
+        # 3. 接收登入結果
+        result = client.recv(1024).decode('utf-8')
+        print(result)
 
-    # --- 聊天流程 ---
-    receive_thread = threading.Thread(target=receive_messages, args=(client,))
-    receive_thread.daemon = True
-    receive_thread.start()
-
-    print("\n--- 開始聊天 (輸入 'exit' 離開) ---")
-    while True:
-        try:
-            message = input()
-            if message.lower() == 'exit':
-                client.close()
-                sys.exit()
-            client.send(message.encode('utf-8'))
-        except KeyboardInterrupt:
+        # 如果被伺服器拒絕，就自動關閉程式
+        if "錯誤" in result:
             client.close()
-            sys.exit()
+            return
+
+        print("\n--- 開始聊天 (輸入 'exit' 離開) ---")
+
+        # 啟動背景執行緒負責接收廣播訊息
+        receive_thread = threading.Thread(target=receive_messages, args=(client,))
+        receive_thread.daemon = True
+        receive_thread.start()
+
+        # 主執行緒負責發送訊息
+        while True:
+            message = input("輸入訊息: ")
+            if message.lower() == 'exit':
+                break
+            if message.strip():
+                client.send(message.encode('utf-8'))
+
+    except KeyboardInterrupt:
+        print("\n[系統] 手動離開聊天室。")
+    finally:
+        client.close()
 
 if __name__ == "__main__":
-    # 若指令後面加上 faceid，就啟動人臉辨識登入模式
-    use_faceid = len(sys.argv) > 1 and sys.argv[1] == "faceid"
-    start_client(use_faceid=use_faceid)
+    start_client()
