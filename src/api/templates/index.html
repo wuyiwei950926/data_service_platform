@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataNova 服務平台控制中心</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --accent-primary: #3b82f6;
+            --accent-glow: 0 0 15px rgba(59, 130, 246, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* 頂部導覽列 */
+        .navbar-custom {
+            background: rgba(15, 23, 42, 0.8) !important;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 15px 0;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, #60a5fa, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* 玻璃擬物化卡片 */
+        .module-card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
+        }
+        .module-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 卡片標題 */
+        .card-header-custom {
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.02);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-m3 { color: #60a5fa; border-top: 3px solid #60a5fa; }
+        .header-m6 { color: #34d399; border-top: 3px solid #34d399; }
+        .header-m7 { color: #fbbf24; border-top: 3px solid #fbbf24; }
+        .header-db { color: #a855f7; border-top: 3px solid #a855f7; }
+
+        /* 輸入框與按鈕優化 */
+        .form-control {
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        .form-control:focus {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+            color: #fff;
+        }
+        .btn-panel { display: flex; flex-direction: column; gap: 12px; padding: 20px; }
+        .custom-btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-glow-primary { background: #2563eb; color: white; border: none; }
+        .btn-glow-primary:hover { background: #1d4ed8; box-shadow: 0 0 15px rgba(37, 99, 235, 0.5); color: white; }
+        
+        .btn-outline-glow { border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0; background: transparent; }
+        .btn-outline-glow:hover { border-color: #fff; background: rgba(255,255,255,0.05); color: #fff; }
+
+        /* 資料表設計 */
+        .table-container {
+            padding: 0;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .table {
+            margin-bottom: 0;
+            color: #e2e8f0;
+        }
+        .table thead th {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            padding: 15px;
+        }
+        .table tbody td {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            vertical-align: middle;
+        }
+        .table tbody tr:hover td { background-color: rgba(255, 255, 255, 0.03); }
+        .badge-category {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            font-weight: normal;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+
+        /* 內部小卡片 (如設定金鑰區) */
+        .inner-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        /* 滾動條美化 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-custom sticky-top">
+        <div class="container-fluid px-4">
+            <span class="navbar-brand h1 mb-0">
+                <i class="fa-solid fa-cube me-2"></i>DataNova 核心戰情中心
+            </span>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-success bg-opacity-25 text-success border border-success"><i class="fa-solid fa-circle-check me-1"></i>System Online</span>
+                <span class="text-muted small"><i class="fa-regular fa-clock me-1"></i>v2.5.0 (AI Edition)</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4 py-4">
+        <div class="row">
+            <div class="col-lg-4 col-md-5">
+                
+                <div class="module-card">
+                    <div class="card-header-custom header-m3">
+                        <i class="fa-solid fa-database"></i> 巨量資料管線 (Pipeline)
+                    </div>
+                    <div class="btn-panel">
+                        <p class="text-muted small mb-0">一鍵啟動網路爬蟲，抓取最新電動車財報並執行清洗標準化。</p>
+                        <button class="btn custom-btn btn-glow-primary" onclick="triggerSystem('/api/trigger/pipeline', '啟動資料管線中...')">
+                            <i class="fa-solid fa-bolt"></i> 執行抓取與清洗任務
+                        </button>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <div class="card-header-custom header-m6">
+                        <i class="fa-regular fa-comments"></i> 智能客服系統 (Socket + LLM)
+                    </div>
+                    <div class="btn-panel">
+                        
+                        <div class="inner-box">
+                            <h6 class="text-info mb-2 small fw-bold"><i class="fa-solid fa-brain me-1"></i>喚醒 NovaBot (Gemini API)</h6>
+                            <div class="input-group input-group-sm">
+                                <input type="password" id="gemini-key" class="form-control" placeholder="貼上 Google API Key">
+                                <button class="btn btn-info text-dark fw-bold" onclick="setGeminiKey()">綁定</button>
+                            </div>
+                        </div>
+
+                        <div class="inner-box">
+                            <h6 class="text-light mb-2 small fw-bold"><i class="fa-solid fa-user-plus me-1"></i>註冊新使用者</h6>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="reg-username" class="form-control" placeholder="設定帳號">
+                                <input type="password" id="reg-password" class="form-control" placeholder="設定密碼">
+                                <button class="btn btn-secondary" onclick="registerUser()">註冊</button>
+                            </div>
+                        </div>
+
+                        <button class="btn custom-btn btn-outline-glow" onclick="triggerSystem('/api/trigger/chat-server', '啟動伺服器中...')">
+                            <i class="fa-solid fa-server"></i> 1. 啟動後端 Socket 伺服器
+                        </button>
+                        <button class="btn custom-btn" style="background: #10b981; color: white;" onclick="triggerSystem('/api/trigger/chat-client', '啟動客戶端中...')">
+                            <i class="fa-regular fa-paper-plane"></i> 2. 開啟聊天室 (手動登入)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <div class="card-header-custom header-m7">
+                        <i class="fa-solid fa-expand"></i> Face ID 視覺辨識 (OpenCV)
+                    </div>
+                    <div class="btn-panel">
+                        <p class="text-muted small mb-0">無密碼快速通關，支援機器學習特徵綁定。</p>
+                        <button class="btn custom-btn btn-outline-glow" onclick="setupFaceID()">
+                            <i class="fa-solid fa-fingerprint"></i> 1. 驗證密碼並建立 Face ID
+                        </button>
+                        <button class="btn custom-btn" style="background: #f59e0b; color: #fff;" onclick="triggerSystem('/api/trigger/face-login', '啟動生物辨識鏡頭中...')">
+                            <i class="fa-solid fa-camera"></i> 2. 啟動人臉辨識登入
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-lg-8 col-md-7">
+                <div class="module-card h-100 mb-0 d-flex flex-column">
+                    <div class="card-header-custom header-db justify-content-between">
+                        <div>
+                            <i class="fa-solid fa-table-list"></i> 核心資料庫狀態 (REST API)
+                        </div>
+                        <button class="btn btn-sm btn-outline-glow px-3 py-1" onclick="fetchData()">
+                            <i class="fa-solid fa-rotate-right"></i> 重新載入
+                        </button>
+                    </div>
+                    <div class="card-body table-container flex-grow-1">
+                        <table class="table table-borderless align-middle">
+                            <thead>
+                                <tr>
+                                    <th width="8%">ID</th>
+                                    <th width="15%">產業分類</th>
+                                    <th width="65%">清洗後標準化財務數據</th>
+                                    <th width="12%" class="text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="data-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function triggerSystem(endpoint, loadMessage) {
+            console.log(loadMessage);
+            fetch(endpoint, { method: 'POST' })
+                .then(response => response.json())
+                .then(result => {
+                    if(result.status !== 'success') alert('錯誤: ' + result.message);
+                    else if(endpoint === '/api/trigger/pipeline') setTimeout(fetchData, 1200); 
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function registerUser() {
+            const user = document.getElementById('reg-username').value;
+            const pass = document.getElementById('reg-password').value;
+            if(!user || !pass) return alert("請完整輸入帳號與密碼！");
+
+            fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, password: pass })
+            })
+            .then(res => res.json())
+            .then(result => {
+                alert(result.message);
+                if(result.status === 'success') {
+                    document.getElementById('reg-username').value = '';
+                    document.getElementById('reg-password').value = '';
+                }
+            });
+        }
+
+        function setGeminiKey() {
+            const key = document.getElementById('gemini-key').value;
+            if(!key) return alert("請貼上您的 API Key！");
+
+            fetch('/api/config/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: key })
+            })
+            .then(res => res.json())
+            .then(result => {
+                alert(result.message);
+                if(result.status === 'success') document.getElementById('gemini-key').value = ''; 
+            });
+        }
+
+        function setupFaceID() {
+            const username = prompt("請輸入要綁定 Face ID 的帳號:");
+            if (!username) return;
+            const password = prompt(`請輸入帳號 [${username}] 的密碼以進行安全驗證:`);
+            if (!password) return;
+
+            fetch('/api/trigger/face-register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(res => res.json())
+            .then(result => alert(result.message));
+        }
+
+        function fetchData() {
+            const tbody = document.getElementById('data-body');
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted"><i class="fa-solid fa-spinner fa-spin fa-2x mb-3 d-block"></i>載入資料中...</td></tr>';
+            
+            fetch('/api/data')
+                .then(res => res.json())
+                .then(result => {
+                    tbody.innerHTML = ''; 
+                    if(result.status === 'success' && result.data.length > 0) {
+                        result.data.forEach(item => {
+                            tbody.innerHTML += `<tr>
+                                <td class="text-muted fw-bold">#${item.id}</td>
+                                <td><span class="badge-category"><i class="fa-solid fa-tag me-1"></i>${item.category || 'N/A'}</span></td>
+                                <td class="text-light">${item.clean_content}</td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteData(${item.id})" title="刪除">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr>
+                            <td colspan="4" class="text-center text-muted py-5">
+                                <i class="fa-solid fa-inbox fa-3x mb-3 opacity-50 d-block"></i>
+                                資料庫目前為空，請點擊左側【執行抓取與清洗任務】！
+                            </td>
+                        </tr>`;
+                    }
+                });
+        }
+
+        function deleteData(id) {
+            if(confirm('警告：確定要永久刪除這筆資料嗎？')) {
+                fetch(`/api/data/${id}`, { method: 'DELETE' })
+                    .then(() => fetchData());
+            }
+        }
+
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
