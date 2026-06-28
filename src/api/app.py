@@ -3,7 +3,6 @@ import sqlite3
 import os
 import sys
 import subprocess
-
 # 確保路徑正確
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from src.database.db_manager import DatabaseManager
@@ -107,10 +106,11 @@ def trigger_face_register():
     
     if not username or not password:
         return jsonify({"status": "error", "message": "帳號與密碼不可為空！"}), 400
-        
+    
+    hashed_password = hash_password(password)
     # 🔐 【安全性關鍵】先進行密碼 Hash 驗證
-    if not db.verify_login(username, hash_password(password)):
-        return jsonify({"status": "error", "message": "❌ 密碼驗證失敗！無權限綁定 Face ID。"}), 401
+    if not db.verify_login(username, hashed_password):
+        return jsonify({"status": "error", "message": "密碼錯誤，安全驗證失敗！"})
         
     # 驗證成功，允許開啟 OpenCV 鏡頭擷取人臉
     subprocess.Popen(['start', 'cmd', '/k', f'{sys.executable} -m src.ai_vision.face_login register {username}'], shell=True)
