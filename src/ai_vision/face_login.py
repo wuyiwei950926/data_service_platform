@@ -3,6 +3,7 @@ import sys
 import os
 import numpy as np
 import time
+import subprocess
 
 # 確保路徑正確
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -141,12 +142,23 @@ class FaceLoginSystem:
                 if recognized_name != "Unknown":
                     print(f"\n[+] 影像分析成功！已比對到特徵。")
                     print(f"[+] 歡迎回來，{recognized_name}！Face ID 登入成功。")
+                    
+                    # 登入成功，先關閉鏡頭
                     cap.release()
                     cv2.destroyAllWindows()
+            
+                    # 啟動聊天室並傳遞通行證
+                    print("[*] 正在為您轉接至 DataNova 智能聊天室...")
+                    subprocess.Popen(['start', 'cmd', '/k', 'python', '-m', 'src.chat.client', str(recognized_name), 'FACEID_BYPASS'], shell=True)
+            
+                    # 結束這個函式
                     return recognized_name
+                
                 else:
+                    # 如果按下 L，但臉部辨識是 Unknown 時的防呆機制
                     print("\n[-] 登入失敗：無法辨識此人臉，或未對準鏡頭。")
 
+        # 這裡處理的是按下 'Q' 或發生意外退出迴圈時的收尾
         cap.release()
         cv2.destroyAllWindows()
         return None
